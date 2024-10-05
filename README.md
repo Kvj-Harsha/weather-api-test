@@ -60,8 +60,7 @@ Welcome to the Ocean/Weather Data App! This Next.js application allows you to fe
 
 ## 📸 Screenshots
 
-![Weather Data](./public/weather-data.png)
-![Ocean Data](./public/ocean-data.png)
+![Weather Data](./dashboard.png)
 
 ## 📝 Usage
 
