@@ -1,101 +1,116 @@
-import Image from "next/image";
+"use client"
+
+import { useState, useEffect } from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [lat, setLat] = useState('15.5'); // Default latitude
+  const [lon, setLon] = useState('73.8'); // Default longitude
+  const [dataType, setDataType] = useState('weather'); // Default to weather data
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    fetchData(lat, lon, dataType); // Fetch data on component mount
+  }, []);
+
+  const fetchData = async (latitude, longitude, type) => {
+    setLoading(true);
+    try {
+      const apiKey = 'YOUR_API_KEY'; // Replace with your OpenWeatherMap API key
+      const url = type === 'ocean'
+        ? `https://api.openweathermap.org/data/2.5/marine?lat=${latitude}&lon=${longitude}&appid=${apiKey}`
+        : `/api/weather?lat=${latitude}&lon=${longitude}`;
+
+      const response = await fetch(url);
+      const responseData = await response.json();
+      console.log(responseData); // Log the response data
+
+      if (responseData.error) {
+        setError(responseData.error); // Handle error message from API
+      } else {
+        setData(responseData);
+      }
+    } catch (err) {
+      setError("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchData(lat, lon, dataType); // Fetch data based on user input and selected type
+  };
+
+  const handleDataTypeChange = (e) => {
+    setDataType(e.target.value); // Update data type based on selection
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-screen text-xl">Loading...</div>;
+  if (error) return <div className="flex justify-center items-center h-screen text-red-600 text-xl">{error}</div>;
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-200 to-blue-400 p-4">
+      <h1 className="text-4xl font-bold mb-8 text-center animate__animated animate__fadeIn">Ocean/Weather Data</h1>
+
+      {/* Data Type Selection */}
+      <div className="mb-4">
+        <select
+          value={dataType}
+          onChange={handleDataTypeChange}
+          className="p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="weather">Weather</option>
+          <option value="ocean">Ocean Data</option>
+        </select>
+      </div>
+
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="flex mb-6">
+        <input
+          type="text"
+          placeholder="Latitude"
+          value={lat}
+          onChange={(e) => setLat(e.target.value)}
+          className="p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <input
+          type="text"
+          placeholder="Longitude"
+          value={lon}
+          onChange={(e) => setLon(e.target.value)}
+          className="p-2 border rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded-md ml-2 hover:bg-blue-600 transition duration-200">
+          Search
+        </button>
+      </form>
+
+      {data && (
+        <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full transition transform hover:scale-105 hover:shadow-xl animate__animated animate__fadeIn">
+          {dataType === 'weather' ? (
+            <>
+              <p className="text-lg font-semibold">Location: {data.name}</p>
+              <p className="text-2xl font-bold mt-2">Temperature: {data.main.temp} °C</p>
+              <p className="text-lg mt-2">Wind Speed: {data.wind.speed} m/s</p>
+              <p className="text-lg mt-2">Pressure: {data.main.pressure} hPa</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-semibold">Ocean Data</p>
+              <p className="text-lg mt-2">Sea Surface Temperature: {data.sst || 'N/A'} °C</p>
+              <p className="text-lg mt-2">Salinity: {data.salinity || 'N/A'} PSU</p>
+              <p className="text-lg mt-2">Chlorophyll-a: {data.chlorophyll || 'N/A'} mg/m³</p>
+              <p className="text-lg mt-2">Current Speed: {data.current?.speed || 'N/A'} m/s</p>
+              <p className="text-lg mt-2">Wave Height: {data.wave?.height || 'N/A'} m</p>
+            </>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+      {!data && <p className="text-lg text-gray-600">No data available</p>}
     </div>
   );
 }
